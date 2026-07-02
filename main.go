@@ -32,17 +32,16 @@ func registerRequestHandler(writer http.ResponseWriter, request *http.Request) {
 		writer.Write([]byte(fmt.Sprintf(`read body error : %s`, iErr.Error())))
 		return
 	}
-	fmt.Println(1, string(reqBody))
+
 	if err := json.Unmarshal(reqBody, &registerRequest); err != nil {
 		fmt.Println("json unmarshal error", err)
 		writer.Write([]byte(fmt.Sprintf(`json unmarshal error : %s`, err.Error())))
 		return
 	}
-	fmt.Println(2, string(reqBody))
+
 	repo := repository.NewDB()
 	userServ := userservice.New(repo)
 
-	fmt.Println(registerRequest)
 	user, err := userServ.Register(registerRequest)
 	if err != nil {
 		writer.Write([]byte(fmt.Sprintf(`register error : %s`, err.Error())))

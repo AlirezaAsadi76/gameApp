@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"gameApp/entity"
+	"gameApp/pkg/hashing"
 	"gameApp/pkg/phonenumber"
 )
 
@@ -58,12 +59,16 @@ func (s *Service) Register(req RegisterRequest) (RegisterResponse, error) {
 		return RegisterResponse{}, errors.New("password is too short, must be 8 characters long")
 	}
 
+	hash, hErr := hashing.HashPassword(req.Password)
+	if hErr != nil {
+		return RegisterResponse{}, hErr
+	}
 	// create user in storage
 	user := entity.User{
 		Name:        req.Name,
 		PhoneNumber: req.PhoneNumber,
 		ID:          0,
-		Password:    req.Password,
+		Password:    hash,
 	}
 
 	userCreated, rErr := s.repository.Register(user)
@@ -92,4 +97,7 @@ func (s *Service) Login(req LoginRequest) (LoginResponse, error) {
 	// compare user.password with the req.password
 
 	// return loginResponse
+
+	panic("implement me")
+	return LoginResponse{}, nil
 }

@@ -34,7 +34,7 @@ func (s *MysqlDB) IsPhoneNumberUnique(phoneNumber string) (bool, error) {
 
 	user := entity.User{}
 	var createdAt []uint8
-	rErr := row.Scan(&user.ID, &user.PhoneNumber, &user.Name, &createdAt)
+	rErr := row.Scan(&user.ID, &user.PhoneNumber, &user.Name, &user.Password, &createdAt)
 	if rErr != nil {
 
 		if errors.Is(rErr, sql.ErrNoRows) {
@@ -50,7 +50,7 @@ func (s *MysqlDB) IsPhoneNumberUnique(phoneNumber string) (bool, error) {
 
 func (s *MysqlDB) Register(user entity.User) (entity.User, error) {
 
-	result, eErr := s.db.Exec(`insert into users(name, phone_number) values(?, ?)`, user.Name, user.PhoneNumber)
+	result, eErr := s.db.Exec(`insert into users(name, phone_number, password) values(?, ?)`, user.Name, user.PhoneNumber, user.Password)
 	if eErr != nil {
 		return entity.User{}, fmt.Errorf("cannot insert user: %w", eErr)
 	}

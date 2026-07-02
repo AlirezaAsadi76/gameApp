@@ -19,6 +19,7 @@ type Service struct {
 type RegisterRequest struct {
 	Name        string `json:"name"`
 	PhoneNumber string `json:"phone_number"`
+	Password    string `json:"password"`
 }
 
 type RegisterResponse struct {
@@ -50,11 +51,19 @@ func (s *Service) Register(req RegisterRequest) (RegisterResponse, error) {
 	if len(req.Name) < 3 {
 		return RegisterResponse{}, errors.New("name is too short, must be 3 characters long")
 	}
+
+	// TODO - check the  password with regex pattern
+	// validate password
+	if len(req.Password) < 8 {
+		return RegisterResponse{}, errors.New("password is too short, must be 8 characters long")
+	}
+
 	// create user in storage
 	user := entity.User{
 		Name:        req.Name,
 		PhoneNumber: req.PhoneNumber,
 		ID:          0,
+		Password:    req.Password,
 	}
 
 	userCreated, rErr := s.repository.Register(user)

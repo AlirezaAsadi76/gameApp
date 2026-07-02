@@ -67,3 +67,20 @@ func (s *Service) Register(req RegisterRequest) (RegisterResponse, error) {
 	return RegisterResponse{userCreated}, nil
 
 }
+
+type LoginRequest struct {
+	PhoneNumber string `json:"phone_number"`
+	Password    string `json:"password"`
+}
+
+type LoginResponse struct{}
+
+func (s *Service) Login(req LoginRequest) (LoginResponse, error) {
+	// check existences of phone_number from repository
+
+	// get the user by phoneNumber
+
+	// compare user.password with the req.password
+
+	// return loginResponse
+}

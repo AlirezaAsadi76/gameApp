@@ -48,6 +48,25 @@ func (s *MysqlDB) IsPhoneNumberUnique(phoneNumber string) (bool, error) {
 
 }
 
+func (s *MysqlDB) GetUserByPhoneNumber(phoneNumber string) (entity.User, bool, error) {
+
+	row := s.db.QueryRow(`select * from users where phone_number = ?`, phoneNumber)
+
+	user := entity.User{}
+	var createdAt []uint8
+	rErr := row.Scan(&user.ID, &user.PhoneNumber, &user.Name, &user.Password, &createdAt)
+	if rErr != nil {
+
+		if errors.Is(rErr, sql.ErrNoRows) {
+
+			return entity.User{}, false, nil
+		}
+		return entity.User{}, false, fmt.Errorf("query row scan error: %w", rErr)
+	}
+
+	return user, true, nil
+
+}
 func (s *MysqlDB) Register(user entity.User) (entity.User, error) {
 
 	result, eErr := s.db.Exec(`insert into users(name, phone_number, password) values(?, ?, ?)`, user.Name, user.PhoneNumber, user.Password)

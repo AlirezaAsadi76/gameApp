@@ -17,8 +17,8 @@ type Service struct {
 }
 
 type RegisterRequest struct {
-	Name        string
-	PhoneNumber string
+	Name        string `json:"name"`
+	PhoneNumber string `json:"phone_number"`
 }
 
 type RegisterResponse struct {
@@ -33,11 +33,9 @@ func (s *Service) Register(req RegisterRequest) (RegisterResponse, error) {
 	// TODO - verify phonenumber
 
 	//validate phone number
-	fmt.Println(11)
 	if !phonenumber.IsValid(req.PhoneNumber) {
 		return RegisterResponse{}, errors.New("invalid phone")
 	}
-	fmt.Println(12)
 
 	// check uniqueness phone number
 	if ok, isErr := s.repository.IsPhoneNumberUnique(req.PhoneNumber); isErr != nil || !ok {

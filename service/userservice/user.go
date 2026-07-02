@@ -88,7 +88,9 @@ type LoginRequest struct {
 	Password    string `json:"password"`
 }
 
-type LoginResponse struct{}
+type LoginResponse struct {
+	User entity.User
+}
 
 func (s *Service) Login(req LoginRequest) (LoginResponse, error) {
 	// check existences of phone_number from repository
@@ -108,6 +110,5 @@ func (s *Service) Login(req LoginRequest) (LoginResponse, error) {
 
 	// return loginResponse
 
-	panic("implement me")
-	return LoginResponse{}, nil
+	return LoginResponse{User: user}, nil
 }

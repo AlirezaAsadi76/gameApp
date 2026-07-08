@@ -9,6 +9,10 @@ import (
 	"net/http"
 )
 
+const (
+	jwtSecret = "secret"
+)
+
 func main() {
 
 	mux := http.NewServeMux()
@@ -42,7 +46,7 @@ func ProfileRequestHandler(writer http.ResponseWriter, request *http.Request) {
 	}
 
 	repo := repository.NewDB()
-	userServ := userservice.New(repo)
+	userServ := userservice.New(repo, jwtSecret)
 
 	profileResponse, err := userServ.Profile(profileRequest)
 	if err != nil {
@@ -78,7 +82,7 @@ func LoginRequestHandler(writer http.ResponseWriter, request *http.Request) {
 	}
 
 	repo := repository.NewDB()
-	userServ := userservice.New(repo)
+	userServ := userservice.New(repo, jwtSecret)
 
 	user, err := userServ.Login(loginRequest)
 	if err != nil {
@@ -111,7 +115,7 @@ func registerRequestHandler(writer http.ResponseWriter, request *http.Request) {
 	}
 
 	repo := repository.NewDB()
-	userServ := userservice.New(repo)
+	userServ := userservice.New(repo, jwtSecret)
 
 	user, err := userServ.Register(registerRequest)
 	if err != nil {

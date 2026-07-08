@@ -6,6 +6,9 @@ import (
 	"gameApp/entity"
 	"gameApp/pkg/hashing"
 	"gameApp/pkg/phonenumber"
+	"time"
+
+	jwt "github.com/golang-jwt/jwt/v5"
 )
 
 type Repository interface {
@@ -17,6 +20,7 @@ type Repository interface {
 
 type Service struct {
 	repository Repository
+	signingKey string
 }
 
 type RegisterRequest struct {
@@ -29,8 +33,8 @@ type RegisterResponse struct {
 	User entity.User
 }
 
-func New(repository Repository) *Service {
-	return &Service{repository: repository}
+func New(repository Repository, signKey string) *Service {
+	return &Service{repository: repository, signingKey: signKey}
 }
 
 func (s *Service) Register(req RegisterRequest) (RegisterResponse, error) {
@@ -90,7 +94,7 @@ type LoginRequest struct {
 }
 
 type LoginResponse struct {
-	User entity.User
+	AccessToken string `json:"access_token"`
 }
 
 func (s *Service) Login(req LoginRequest) (LoginResponse, error) {
@@ -109,9 +113,32 @@ func (s *Service) Login(req LoginRequest) (LoginResponse, error) {
 		return LoginResponse{}, errors.New("username or password isn't exist")
 	}
 
-	// return loginResponse
+	accessToken, tErr := createToken(user.ID, s.signingKey)
+	if tErr != nil {
+		return LoginResponse{}, fmt.Errorf("unexpected error : %w", tErr)
+	}
 
-	return LoginResponse{User: user}, nil
+	return LoginResponse{AccessToken: accessToken}, nil
+}
+
+type Claims struct {
+	jwt.RegisteredClaims
+	UserID uint
+}
+
+func createToken(userID uint, signKey string) (string, error) {
+
+	t := jwt.New(jwt.GetSigningMethod("HS256"))
+
+	t.Claims = &Claims{
+		jwt.RegisteredClaims{
+
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Minute * 1)),
+		},
+		userID,
+	}
+
+	return t.SignedString([]byte(signKey))
 }
 
 type ProfileRequest struct {

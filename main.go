@@ -4,31 +4,44 @@ import (
 	"encoding/json"
 	"fmt"
 	"gameApp/repository"
+	"gameApp/service/authservice"
 	"gameApp/service/userservice"
 	"io"
 	"net/http"
+	"time"
 )
 
 const (
-	jwtSecret = "secret"
+	jwtSecret            = "secret"
+	AccessTokenSubject   = "at"
+	RefreshTokenSubject  = "rt"
+	AccessTokenDuration  = time.Hour * 24
+	RefreshTokenDuration = time.Hour * 24 * 7
 )
 
 func main() {
 
 	mux := http.NewServeMux()
 
-	mux.HandleFunc("/users/register", registerRequestHandler)
-	mux.HandleFunc("/users/login", LoginRequestHandler)
-	mux.HandleFunc("/users/profile", ProfileRequestHandler)
+	mux.HandleFunc("/users/register", userRegisterHandler)
+	mux.HandleFunc("/users/login", userLoginHandler)
+	mux.HandleFunc("/users/profile", userProfileHandler)
 	server := &http.Server{Addr: ":7660", Handler: mux}
 	fmt.Println("Listening on port 7660")
 	server.ListenAndServe()
 }
 
-func ProfileRequestHandler(writer http.ResponseWriter, request *http.Request) {
+func userProfileHandler(writer http.ResponseWriter, request *http.Request) {
 	if request.Method != http.MethodGet {
 		fmt.Println("request method :", request.Method)
 		writer.Write([]byte(`request method must be "GET"`))
+		return
+	}
+	authorization := request.Header.Get("Authorization")
+	authService := authservice.New(jwtSecret, AccessTokenSubject, RefreshTokenSubject, AccessTokenDuration, RefreshTokenDuration)
+	claims, pErr := authService.ParseToken(authorization, jwtSecret)
+	if pErr != nil {
+		fmt.Println(pErr)
 		return
 	}
 
@@ -46,7 +59,7 @@ func ProfileRequestHandler(writer http.ResponseWriter, request *http.Request) {
 	}
 
 	repo := repository.NewDB()
-	userServ := userservice.New(repo, jwtSecret)
+	userServ := userservice.New(repo, authService)
 
 	profileResponse, err := userServ.Profile(profileRequest)
 	if err != nil {
@@ -59,7 +72,7 @@ func ProfileRequestHandler(writer http.ResponseWriter, request *http.Request) {
 
 }
 
-func LoginRequestHandler(writer http.ResponseWriter, request *http.Request) {
+func userLoginHandler(writer http.ResponseWriter, request *http.Request) {
 
 	if request.Method != http.MethodPost {
 		fmt.Println("request method :", request.Method)
@@ -80,19 +93,19 @@ func LoginRequestHandler(writer http.ResponseWriter, request *http.Request) {
 		writer.Write([]byte(fmt.Sprintf(`json unmarshal error : %s`, err.Error())))
 		return
 	}
-
+	authService := authservice.New(jwtSecret, AccessTokenSubject, RefreshTokenSubject, AccessTokenDuration, RefreshTokenDuration)
 	repo := repository.NewDB()
-	userServ := userservice.New(repo, jwtSecret)
+	userServ := userservice.New(repo, authService)
 
-	user, err := userServ.Login(loginRequest)
+	userResponse, err := userServ.Login(loginRequest)
 	if err != nil {
 		writer.Write([]byte(fmt.Sprintf(`Login error : %s`, err.Error())))
 		return
 	}
-	json.NewEncoder(writer).Encode(user)
+	json.NewEncoder(writer).Encode(userResponse)
 }
 
-func registerRequestHandler(writer http.ResponseWriter, request *http.Request) {
+func userRegisterHandler(writer http.ResponseWriter, request *http.Request) {
 
 	if request.Method != http.MethodPost {
 		fmt.Println("request method :", request.Method)
@@ -113,9 +126,9 @@ func registerRequestHandler(writer http.ResponseWriter, request *http.Request) {
 		writer.Write([]byte(fmt.Sprintf(`json unmarshal error : %s`, err.Error())))
 		return
 	}
-
+	authService := authservice.New(jwtSecret, AccessTokenSubject, RefreshTokenSubject, AccessTokenDuration, RefreshTokenDuration)
 	repo := repository.NewDB()
-	userServ := userservice.New(repo, jwtSecret)
+	userServ := userservice.New(repo, authService)
 
 	user, err := userServ.Register(registerRequest)
 	if err != nil {

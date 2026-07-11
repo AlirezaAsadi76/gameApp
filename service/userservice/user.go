@@ -30,13 +30,13 @@ type RegisterRequest struct {
 	Password    string `json:"password"`
 }
 
-type UserRegisterResponse struct {
+type UserInfo struct {
 	ID          uint   `json:"id"`
 	PhoneNumber string `json:"phone_number"`
 	Name        string `json:"name"`
 }
 type RegisterResponse struct {
-	User UserRegisterResponse
+	User UserInfo
 }
 
 func New(repository Repository, authGenerator AuthGenerator) *Service {
@@ -90,7 +90,7 @@ func (s *Service) Register(req RegisterRequest) (RegisterResponse, error) {
 
 	// return created user
 
-	return RegisterResponse{User: UserRegisterResponse{
+	return RegisterResponse{User: UserInfo{
 		ID:          userCreated.ID,
 		PhoneNumber: userCreated.PhoneNumber,
 		Name:        userCreated.Name,
@@ -98,14 +98,18 @@ func (s *Service) Register(req RegisterRequest) (RegisterResponse, error) {
 
 }
 
+type Tokens struct {
+	AccessToken  string `json:"access_token"`
+	RefreshToken string `json:"refresh_token"`
+}
 type LoginRequest struct {
 	PhoneNumber string `json:"phone_number"`
 	Password    string `json:"password"`
 }
 
 type LoginResponse struct {
-	AccessToken  string `json:"access_token"`
-	RefreshToken string `json:"refresh_token"`
+	Tokens Tokens   `json:"tokens"`
+	User   UserInfo `json:"user"`
 }
 
 func (s *Service) Login(req LoginRequest) (LoginResponse, error) {
@@ -133,14 +137,21 @@ func (s *Service) Login(req LoginRequest) (LoginResponse, error) {
 		return LoginResponse{}, fmt.Errorf("unexpected error : %w", rErr)
 	}
 
-	return LoginResponse{AccessToken: accessToken, RefreshToken: refreshToken}, nil
+	return LoginResponse{Tokens: Tokens{
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
+	}, User: UserInfo{
+		ID:          user.ID,
+		PhoneNumber: user.PhoneNumber,
+		Name:        user.Name,
+	}}, nil
 }
 
 type ProfileRequest struct {
 	UserId uint `json:"user_id"`
 }
 type ProfileResponse struct {
-	Name string `json:"name"`
+	User UserInfo `json:"user"`
 }
 
 // all request intructor/service should be sanitized
@@ -148,9 +159,14 @@ type ProfileResponse struct {
 func (s *Service) Profile(req ProfileRequest) (ProfileResponse, error) {
 
 	//TODO - we can use rich error
-	user, gErr := s.repository.GetUserByID(req.UserId)
+	userSelected, gErr := s.repository.GetUserByID(req.UserId)
 	if gErr != nil {
 		return ProfileResponse{}, fmt.Errorf("unexpected error : %w", gErr)
 	}
-	return ProfileResponse{Name: user.Name}, nil
+
+	return ProfileResponse{User: UserInfo{
+		ID:          userSelected.ID,
+		PhoneNumber: userSelected.PhoneNumber,
+		Name:        userSelected.Name,
+	}}, nil
 }

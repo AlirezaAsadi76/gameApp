@@ -65,5 +65,6 @@ func (s Service) ParseToken(tokenStr string, signKey string) (Claims, error) {
 	if !ok || !token.Valid {
 		return Claims{}, errors.New("invalid token")
 	}
+
 	return *claims, nil
 }

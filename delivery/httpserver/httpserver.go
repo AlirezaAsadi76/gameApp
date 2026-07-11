@@ -29,7 +29,10 @@ func (s Server) Start() {
 
 	e.Use(middleware.RequestLogger())
 	e.Use(middleware.Recover())
-	e.POST("/users/register", s.userRegister)
+	userGroup := e.Group("/users")
+	userGroup.POST("/register", s.userRegister)
+	userGroup.POST("/login", s.userLogin)
+	userGroup.GET("/profile", s.userProfile)
 
 	if err := e.Start(fmt.Sprintf(":%d", s.config.HttpServer.Port)); err != nil {
 		e.Logger.Error("failed to start server", "error", err)

@@ -9,30 +9,30 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-type Service struct {
-	signKey              string
-	accessTokenDuration  time.Duration
-	refreshTokenDuration time.Duration
-	accessSubject        string
-	refreshSubject       string
+type Config struct {
+	SignKey              string
+	AccessTokenDuration  time.Duration
+	RefreshTokenDuration time.Duration
+	AccessSubject        string
+	RefreshSubject       string
 }
 
-func New(signKey, accessSubject, refreshSubject string, accessTokenDuration, refreshTokenDuration time.Duration) Service {
+type Service struct {
+	config Config
+}
+
+func New(cfg Config) Service {
 	return Service{
-		signKey:              signKey,
-		accessTokenDuration:  accessTokenDuration,
-		refreshTokenDuration: refreshTokenDuration,
-		accessSubject:        accessSubject,
-		refreshSubject:       refreshSubject,
+		config: cfg,
 	}
 }
 
 func (s Service) CreateAccessToken(user entity.User) (string, error) {
-	return createToken(user.ID, s.signKey, s.accessSubject, s.accessTokenDuration)
+	return createToken(user.ID, s.config.SignKey, s.config.AccessSubject, s.config.AccessTokenDuration)
 }
 
 func (s Service) CreateRefreshToken(user entity.User) (string, error) {
-	return createToken(user.ID, s.signKey, s.refreshSubject, s.refreshTokenDuration)
+	return createToken(user.ID, s.config.SignKey, s.config.RefreshSubject, s.config.RefreshTokenDuration)
 }
 
 func createToken(userID uint, signKey, subject string, duration time.Duration) (string, error) {

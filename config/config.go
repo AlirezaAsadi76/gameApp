@@ -1,7 +1,7 @@
 package config
 
 import (
-	"gameApp/repository"
+	"gameApp/repository/mysql"
 	"gameApp/service/authservice"
 )
 
@@ -9,7 +9,7 @@ type HttpServer struct {
 	Port int
 }
 type Config struct {
-	Mysql      repository.Config
+	Mysql      mysql.Config
 	HttpServer HttpServer
 	Auth       authservice.Config
 }

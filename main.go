@@ -3,7 +3,8 @@ package main
 import (
 	"gameApp/config"
 	"gameApp/delivery/httpserver"
-	"gameApp/repository"
+	"gameApp/repository/migrator"
+	"gameApp/repository/mysql"
 	"gameApp/service/authservice"
 	"gameApp/service/userservice"
 	"time"
@@ -20,7 +21,7 @@ const (
 func main() {
 
 	cfg := config.Config{
-		Mysql: repository.Config{
+		Mysql: mysql.Config{
 			Host:     "localhost",
 			Port:     3308,
 			Username: "gameapp",
@@ -38,62 +39,27 @@ func main() {
 			RefreshTokenDuration: RefreshTokenDuration,
 		},
 	}
-
+	migrate := migrator.New(mysql.Config{
+		Host:     "localhost",
+		Port:     3308,
+		Username: "gameapp",
+		Password: "gameappt0lk2o20",
+		Database: "gameapp_db",
+	})
+	migrate.Up()
 	authServ, userServ := setupService(cfg)
 
 	server := httpserver.New(cfg, authServ, userServ)
 
 	server.Start()
 
-	//mux := http.NewServeMux()
-	//
-	//mux.HandleFunc("/users/register", userRegisterHandler)
-	//mux.HandleFunc("/users/login", userLoginHandler)
-	//mux.HandleFunc("/users/profile", userProfileHandler)
-	//server := &http.Server{Addr: ":7660", Handler: mux}
-	//fmt.Println("Listening on port 7660")
-	//server.ListenAndServe()
 }
-
-//
-//func userRegisterHandler(writer http.ResponseWriter, request *http.Request) {
-//
-//	if request.Method != http.MethodPost {
-//		fmt.Println("request method :", request.Method)
-//		writer.Write([]byte(`request method must be "POST"`))
-//		return
-//	}
-//
-//	var registerRequest userservice.RegisterRequest
-//	reqBody, iErr := io.ReadAll(request.Body)
-//	if iErr != nil {
-//		fmt.Println("read body error", iErr)
-//		writer.Write([]byte(fmt.Sprintf(`read body error : %s`, iErr.Error())))
-//		return
-//	}
-//
-//	if err := json.Unmarshal(reqBody, &registerRequest); err != nil {
-//		fmt.Println("json unmarshal error", err)
-//		writer.Write([]byte(fmt.Sprintf(`json unmarshal error : %s`, err.Error())))
-//		return
-//	}
-//	authService := authservice.New(jwtSecret, AccessTokenSubject, RefreshTokenSubject, AccessTokenDuration, RefreshTokenDuration)
-//	repo := repository.NewDB()
-//	userServ := userservice.New(repo, authService)
-//
-//	user, err := userServ.Register(registerRequest)
-//	if err != nil {
-//		writer.Write([]byte(fmt.Sprintf(`register error : %s`, err.Error())))
-//		return
-//	}
-//	json.NewEncoder(writer).Encode(user)
-//}
 
 func setupService(cfg config.Config) (authservice.Service, *userservice.Service) {
 
 	authServ := authservice.New(cfg.Auth)
 
-	repo := repository.NewDB(cfg.Mysql)
+	repo := mysql.NewDB(cfg.Mysql)
 	userServ := userservice.New(repo, authServ)
 
 	return authServ, userServ

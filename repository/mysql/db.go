@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"gameApp/entity"
+	"gameApp/pkg/msgerror"
+	"gameApp/pkg/richerror"
 	"time"
 
 	_ "github.com/go-sql-driver/mysql"
@@ -39,7 +41,7 @@ func NewDB(config Config) *MysqlDB {
 }
 
 func (s *MysqlDB) IsPhoneNumberUnique(phoneNumber string) (bool, error) {
-
+	const Op = "repository.mysql.IsPhoneNumberUnique"
 	row := s.db.QueryRow(`select * from users where phone_number = ?`, phoneNumber)
 
 	_, rErr := scanUser(row)
@@ -50,7 +52,10 @@ func (s *MysqlDB) IsPhoneNumberUnique(phoneNumber string) (bool, error) {
 
 			return true, nil
 		}
-		return false, fmt.Errorf("query row scan error: %w", rErr)
+		return false, richerror.New(Op).
+			WithError(rErr).
+			WithMessage(msgerror.ErrorMsgCantScanQueryResult).
+			WithKind(richerror.KindUnexpected)
 	}
 
 	return false, nil
@@ -58,7 +63,7 @@ func (s *MysqlDB) IsPhoneNumberUnique(phoneNumber string) (bool, error) {
 }
 
 func (s *MysqlDB) GetUserByPhoneNumber(phoneNumber string) (entity.User, bool, error) {
-
+	const Op = "repository.mysql.GetUserByPhoneNumber"
 	row := s.db.QueryRow(`select * from users where phone_number = ?`, phoneNumber)
 
 	user, rErr := scanUser(row)
@@ -67,9 +72,15 @@ func (s *MysqlDB) GetUserByPhoneNumber(phoneNumber string) (entity.User, bool, e
 
 		if errors.Is(rErr, sql.ErrNoRows) {
 
-			return entity.User{}, false, nil
+			return entity.User{}, false, richerror.New(Op).
+				WithError(rErr).
+				WithMessage(msgerror.ErrorMsgNotFound).
+				WithKind(richerror.KindNotFound)
 		}
-		return entity.User{}, false, fmt.Errorf("query row scan error: %w", rErr)
+		return entity.User{}, false, richerror.New(Op).
+			WithError(rErr).
+			WithMessage(msgerror.ErrorMsgCantScanQueryResult).
+			WithKind(richerror.KindUnexpected)
 	}
 
 	return user, true, nil
@@ -77,7 +88,7 @@ func (s *MysqlDB) GetUserByPhoneNumber(phoneNumber string) (entity.User, bool, e
 }
 
 func (s *MysqlDB) GetUserByID(UserID uint) (entity.User, error) {
-
+	const Op = "repository.mysql.GetUserByID"
 	row := s.db.QueryRow(`select * from users where id = ?`, UserID)
 
 	// TODO - use function for scan user
@@ -86,24 +97,37 @@ func (s *MysqlDB) GetUserByID(UserID uint) (entity.User, error) {
 
 		if errors.Is(rErr, sql.ErrNoRows) {
 
-			return entity.User{}, fmt.Errorf("user not found: %w", rErr)
+			return entity.User{}, richerror.New(Op).
+				WithError(rErr).
+				WithMessage(msgerror.ErrorMsgNotFound).
+				WithKind(richerror.KindNotFound)
 		}
-		return entity.User{}, fmt.Errorf("query row scan error: %w", rErr)
+		return entity.User{}, richerror.New(Op).
+			WithError(rErr).
+			WithMessage(msgerror.ErrorMsgCantScanQueryResult).
+			WithKind(richerror.KindUnexpected)
 	}
 
 	return user, nil
 
 }
 func (s *MysqlDB) Register(user entity.User) (entity.User, error) {
-
+	const Op = "repository.mysql.Register"
 	result, eErr := s.db.Exec(`insert into users(name, phone_number, password) values(?, ?, ?)`, user.Name, user.PhoneNumber, user.Password)
 	if eErr != nil {
-		return entity.User{}, fmt.Errorf("cannot insert user: %w", eErr)
+		return entity.User{}, richerror.New(Op).
+			WithError(eErr).
+			WithMessage(msgerror.ErrorMsgCantScanQueryResult).
+			WithKind(richerror.KindInvalid)
+
 	}
 
 	id, rErr := result.LastInsertId()
 	if rErr != nil {
-		return entity.User{}, fmt.Errorf("cannot get last insert id: %w", rErr)
+		return entity.User{}, richerror.New(Op).
+			WithError(eErr).
+			WithMessage(msgerror.ErrorCantGetIndex).
+			WithKind(richerror.KindUnexpected)
 	}
 	return entity.User{ID: uint(id)}, nil
 }

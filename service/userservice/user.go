@@ -6,6 +6,7 @@ import (
 	"gameApp/entity"
 	"gameApp/pkg/hashing"
 	"gameApp/pkg/phonenumber"
+	"gameApp/pkg/richerror"
 )
 
 type Repository interface {
@@ -157,11 +158,11 @@ type ProfileResponse struct {
 // all request intructor/service should be sanitized
 
 func (s *Service) Profile(req ProfileRequest) (ProfileResponse, error) {
-
+	const Op = "UserService.Profile"
 	//TODO - we can use rich error
 	userSelected, gErr := s.repository.GetUserByID(req.UserId)
 	if gErr != nil {
-		return ProfileResponse{}, fmt.Errorf("unexpected error : %w", gErr)
+		return ProfileResponse{}, richerror.New(Op).WithError(gErr)
 	}
 
 	return ProfileResponse{User: UserInfo{

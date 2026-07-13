@@ -3,14 +3,13 @@ package userservice
 import (
 	"errors"
 	"fmt"
+	"gameApp/dto"
 	"gameApp/entity"
 	"gameApp/pkg/hashing"
-	"gameApp/pkg/phonenumber"
 	"gameApp/pkg/richerror"
 )
 
 type Repository interface {
-	IsPhoneNumberUnique(phoneNumber string) (bool, error)
 	Register(u entity.User) (entity.User, error)
 	GetUserByPhoneNumber(number string) (entity.User, bool, error)
 	GetUserByID(id uint) (entity.User, error)
@@ -23,12 +22,6 @@ type AuthGenerator interface {
 type Service struct {
 	authGenerator AuthGenerator
 	repository    Repository
-}
-
-type RegisterRequest struct {
-	Name        string `json:"name"`
-	PhoneNumber string `json:"phone_number"`
-	Password    string `json:"password"`
 }
 
 type UserInfo struct {
@@ -44,33 +37,8 @@ func New(repository Repository, authGenerator AuthGenerator) *Service {
 	return &Service{repository: repository, authGenerator: authGenerator}
 }
 
-func (s *Service) Register(req RegisterRequest) (RegisterResponse, error) {
+func (s *Service) Register(req dto.RegisterRequest) (RegisterResponse, error) {
 	// TODO - verify phonenumber
-
-	//validate phone number
-	if !phonenumber.IsValid(req.PhoneNumber) {
-		return RegisterResponse{}, errors.New("invalid phone")
-	}
-
-	// check uniqueness phone number
-	if ok, isErr := s.repository.IsPhoneNumberUnique(req.PhoneNumber); isErr != nil || !ok {
-		if isErr != nil {
-			return RegisterResponse{}, fmt.Errorf("unexpected error : %w", isErr)
-		}
-		return RegisterResponse{}, fmt.Errorf("phoneNumber is not unique")
-
-	}
-
-	// validate name
-	if len(req.Name) < 3 {
-		return RegisterResponse{}, errors.New("name is too short, must be 3 characters long")
-	}
-
-	// TODO - check the  password with regex pattern
-	// validate password
-	if len(req.Password) < 8 {
-		return RegisterResponse{}, errors.New("password is too short, must be 8 characters long")
-	}
 
 	hash, hErr := hashing.HashPassword(req.Password)
 	if hErr != nil {

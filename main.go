@@ -3,10 +3,10 @@ package main
 import (
 	"gameApp/config"
 	"gameApp/delivery/httpserver"
-	"gameApp/repository/migrator"
 	"gameApp/repository/mysql"
 	"gameApp/service/authservice"
 	"gameApp/service/userservice"
+	"gameApp/validator/uservalidator"
 	"time"
 )
 
@@ -39,28 +39,28 @@ func main() {
 			RefreshTokenDuration: RefreshTokenDuration,
 		},
 	}
-	migrate := migrator.New(mysql.Config{
-		Host:     "localhost",
-		Port:     3308,
-		Username: "gameapp",
-		Password: "gameappt0lk2o20",
-		Database: "gameapp_db",
-	})
-	migrate.Up()
-	authServ, userServ := setupService(cfg)
+	//migrate := migrator.New(mysql.Config{
+	//	Host:     "localhost",
+	//	Port:     3308,
+	//	Username: "gameapp",
+	//	Password: "gameappt0lk2o20",
+	//	Database: "gameapp_db",
+	//})
+	//migrate.Up()
+	authServ, userServ, userUv := setupService(cfg)
 
-	server := httpserver.New(cfg, authServ, userServ)
+	server := httpserver.New(cfg, authServ, userServ, userUv)
 
 	server.Start()
 
 }
 
-func setupService(cfg config.Config) (authservice.Service, *userservice.Service) {
+func setupService(cfg config.Config) (authservice.Service, *userservice.Service, uservalidator.Validator) {
 
 	authServ := authservice.New(cfg.Auth)
 
 	repo := mysql.NewDB(cfg.Mysql)
 	userServ := userservice.New(repo, authServ)
-
-	return authServ, userServ
+	uV := uservalidator.New(repo)
+	return authServ, userServ, uV
 }

@@ -50,12 +50,12 @@ func createToken(userID uint, signKey, subject string, duration time.Duration) (
 	return t.SignedString([]byte(signKey))
 }
 
-func (s Service) ParseToken(tokenStr string, signKey string) (Claims, error) {
+func (s Service) ParseToken(tokenStr string) (Claims, error) {
 
 	tokenStr = strings.TrimPrefix(tokenStr, "Bearer ")
 
 	token, err := jwt.ParseWithClaims(tokenStr, &Claims{}, func(token *jwt.Token) (interface{}, error) {
-		return []byte(signKey), nil
+		return []byte(s.config.SignKey), nil
 	})
 
 	if err != nil {

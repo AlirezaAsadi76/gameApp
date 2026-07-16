@@ -3,6 +3,7 @@ package main
 import (
 	"gameApp/config"
 	"gameApp/delivery/httpserver"
+	"gameApp/delivery/httpserver/userhandler"
 	"gameApp/repository/mysql"
 	"gameApp/service/authservice"
 	"gameApp/service/userservice"
@@ -48,8 +49,8 @@ func main() {
 	//})
 	//migrate.Up()
 	authServ, userServ, userUv := setupService(cfg)
-
-	server := httpserver.New(cfg, authServ, userServ, userUv)
+	userHandler := userhandler.New(authServ, userServ, userUv)
+	server := httpserver.New(cfg, userHandler)
 
 	server.Start()
 

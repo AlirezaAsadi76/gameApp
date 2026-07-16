@@ -3,9 +3,7 @@ package httpserver
 import (
 	"fmt"
 	"gameApp/config"
-	"gameApp/service/authservice"
-	"gameApp/service/userservice"
-	"gameApp/validator/uservalidator"
+	"gameApp/delivery/httpserver/userhandler"
 
 	"github.com/labstack/echo/v5"
 	"github.com/labstack/echo/v5/middleware"
@@ -13,17 +11,13 @@ import (
 
 type Server struct {
 	config      config.Config
-	authService authservice.Service
-	userService *userservice.Service
-	validator   uservalidator.Validator
+	userHandler userhandler.Handler
 }
 
-func New(config config.Config, authService authservice.Service, userService *userservice.Service, userValidator uservalidator.Validator) Server {
+func New(config config.Config, userHandler userhandler.Handler) Server {
 	return Server{
 		config:      config,
-		authService: authService,
-		userService: userService,
-		validator:   userValidator,
+		userHandler: userHandler,
 	}
 }
 
@@ -32,10 +26,8 @@ func (s Server) Start() {
 
 	e.Use(middleware.RequestLogger())
 	e.Use(middleware.Recover())
-	userGroup := e.Group("/users")
-	userGroup.POST("/register", s.userRegister)
-	userGroup.POST("/login", s.userLogin)
-	userGroup.GET("/profile", s.userProfile)
+
+	s.userHandler.SetRoutes(e)
 
 	if err := e.Start(fmt.Sprintf(":%d", s.config.HttpServer.Port)); err != nil {
 		e.Logger.Error("failed to start server", "error", err)

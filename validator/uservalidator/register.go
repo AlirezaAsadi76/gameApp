@@ -1,0 +1,56 @@
+package uservalidator
+
+import (
+	"errors"
+	"fmt"
+	"gameApp/params"
+	"gameApp/pkg/msgerror"
+	"gameApp/pkg/richerror"
+	"regexp"
+
+	validation "github.com/go-ozzo/ozzo-validation"
+)
+
+func (v Validator) ValidatorRegisterRequest(req params.RegisterRequest) (map[string]string, error) {
+	const Op = "validator.ValidatorRegisterRequest"
+
+	vErr := validation.ValidateStruct(&req,
+
+		validation.Field(&req.Name, validation.Required, validation.Length(3, 50)),
+		validation.Field(&req.Password, validation.Required,
+			validation.Match(regexp.MustCompile(regexPatternPassword))),
+		validation.Field(&req.PhoneNumber, validation.Required,
+			validation.Match(regexp.MustCompile(regexPatternPhoneNumber)),
+			validation.By(v.checkIsPhoneNumberUnique)),
+	)
+	if vErr != nil {
+
+		fieldErrors := make(map[string]string)
+		var errV validation.Errors
+		ok := errors.As(vErr, &errV)
+		if ok {
+			for key, val := range errV {
+				fieldErrors[key] = val.Error()
+			}
+		}
+		return fieldErrors, richerror.New(Op).
+			WithMessage(msgerror.ErrorMsgInputInValid).
+			WithKind(richerror.KindInvalid).
+			WithError(vErr).
+			WithMeta(map[string]interface{}{"request": req})
+	}
+	return nil, nil
+}
+
+func (v Validator) checkIsPhoneNumberUnique(value interface{}) error {
+	phoneNumber := value.(string)
+
+	if ok, isErr := v.repository.IsPhoneNumberUnique(phoneNumber); isErr != nil || !ok {
+		if isErr != nil {
+			return isErr
+		}
+		return fmt.Errorf(msgerror.ErrorMsgPhoneNumberIsNotUnique)
+
+	}
+	return nil
+}

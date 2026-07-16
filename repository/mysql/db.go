@@ -62,7 +62,7 @@ func (s *MysqlDB) IsPhoneNumberUnique(phoneNumber string) (bool, error) {
 
 }
 
-func (s *MysqlDB) GetUserByPhoneNumber(phoneNumber string) (entity.User, bool, error) {
+func (s *MysqlDB) GetUserByPhoneNumber(phoneNumber string) (entity.User, error) {
 	const Op = "repository.mysql.GetUserByPhoneNumber"
 	row := s.db.QueryRow(`select * from users where phone_number = ?`, phoneNumber)
 
@@ -72,18 +72,18 @@ func (s *MysqlDB) GetUserByPhoneNumber(phoneNumber string) (entity.User, bool, e
 
 		if errors.Is(rErr, sql.ErrNoRows) {
 
-			return entity.User{}, false, richerror.New(Op).
+			return entity.User{}, richerror.New(Op).
 				WithError(rErr).
 				WithMessage(msgerror.ErrorMsgNotFound).
 				WithKind(richerror.KindNotFound)
 		}
-		return entity.User{}, false, richerror.New(Op).
+		return entity.User{}, richerror.New(Op).
 			WithError(rErr).
 			WithMessage(msgerror.ErrorMsgCantScanQueryResult).
 			WithKind(richerror.KindUnexpected)
 	}
 
-	return user, true, nil
+	return user, nil
 
 }
 

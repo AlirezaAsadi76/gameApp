@@ -1,4 +1,4 @@
-package dto
+package params
 
 // data transfers object
 type RegisterRequest struct {

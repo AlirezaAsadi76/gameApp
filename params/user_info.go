@@ -1,4 +1,4 @@
-package dto
+package params
 
 type UserInfo struct {
 	ID          uint   `json:"id"`

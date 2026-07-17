@@ -49,7 +49,7 @@ func main() {
 	//})
 	//migrate.Up()
 	authServ, userServ, userUv := setupService(cfg)
-	userHandler := userhandler.New(authServ, userServ, userUv)
+	userHandler := userhandler.New(cfg.Auth, authServ, userServ, userUv)
 	server := httpserver.New(cfg, userHandler)
 
 	server.Start()
